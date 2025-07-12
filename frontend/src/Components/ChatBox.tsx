@@ -4,7 +4,6 @@ import { formatMessageTime } from "../lib/Utils";
 import { ChatContext } from "../../Context/ChatContext";
 import { AuthContext } from "../../Context/AuthContext";
 import { toast } from "react-toastify";
-import type { User } from "../pages/Homepage";
 import logo from "/chatLogo.svg"
 
 const ChatBox = () => {
