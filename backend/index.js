@@ -6,10 +6,9 @@ const { Server } = require("socket.io");
 require("dotenv").config(); // Load .env early
 
 // Middleware
-app.use(cors()); // ✅ call the function
-app.use(express.json({ limit: "10mb" })); // or even higher if needed
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
-
 
 // HTTP server
 const server = http.createServer(app);
@@ -17,19 +16,18 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "*", // You can restrict to specific frontend domain
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
 
-// Export io for other files
+// Export io and user map
 exports.io = io;
 
-// Online users map: userId → socketId
 const userSocketMap = {};
 exports.userSocketMap = userSocketMap;
 
-// Socket connection handling
+// Socket connection logic
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   console.log("User connected:", userId);
@@ -37,13 +35,13 @@ io.on("connection", (socket) => {
   if (userId) {
     userSocketMap[userId] = socket.id;
   }
-  io.emit("getOnlineUsers",Object.keys(userSocketMap));
 
-  // Handle disconnection
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", userId);
     if (userId) delete userSocketMap[userId];
-    io.emit("getOnlineUsers",Object.keys(userSocketMap));
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
 
@@ -51,7 +49,7 @@ io.on("connection", (socket) => {
 const router = require("./Routes/UserRoutes");
 app.use("/api/v1", router);
 
-// Health check route
+// Health check
 app.get("/api/status", (req, res) => {
   res.send("<h1>Server is live</h1>");
 });
@@ -60,13 +58,10 @@ app.get("/api/status", (req, res) => {
 const db = require("./Config/database");
 db();
 
-// Start server
-if(process.env.NODE_ENV !== "production")
-{
-  const port = process.env.PORT || 8080;
-server.listen(port, () =>
-  console.log(`🚀 Server running on http://localhost:${port}`)
-);
-}
+// ✅ Always start the server (Render sets NODE_ENV to production)
+const port = process.env.PORT || 8080;
+server.listen(port, () => {
+  console.log(`🚀 Server running on http://localhost:${port}`);
+});
 
-module.exports = server
+module.exports = server;
