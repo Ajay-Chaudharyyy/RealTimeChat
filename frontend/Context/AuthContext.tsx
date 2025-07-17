@@ -31,6 +31,7 @@ type AuthContextType = {
   login: (state: string, credentials: any) => Promise<void>;
   logout: (showToast?: boolean) => Promise<void>;
   updateProfile: (body: any) => Promise<void>;
+  handleOTP : (email:string,fullName:string)=>Promise<boolean|undefined>;
 };
 
 // ✅ Default context
@@ -43,6 +44,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
+  handleOTP : async () => false
 });
 
 interface AuthProviderProps {
@@ -89,6 +91,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(false);
     }
   };
+
+    const handleOTP = async (email:string,fullName:string) => {
+    try{
+      if(!email) {
+        toast.error("Email is required for OTP");
+        return;
+      }
+      const data = await axios.post("/api/v1/otp", {email,fullName})
+
+      if(data?.data?.success) {
+        toast.success("OTP sent to your email");
+        return true;
+      } else {
+        toast.error("Failed to send OTP");
+        return false;
+      }
+    }catch(err)
+    {
+      if(err instanceof Error)
+      toast.error(err?.message || "OTP request failed");
+    return false;
+    }
+  }
 
   // ✅ Login
   const login = async (state: string, credentials: any) => {
@@ -174,6 +199,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       login,
       logout,
       updateProfile,
+      handleOTP
     }),
     [authUser, onlineUsers, socket, loading]
   );
