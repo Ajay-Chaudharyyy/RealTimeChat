@@ -4,7 +4,7 @@ import logo from "/chatLogo.svg"
 import menuIcon from '../assets/menu_icon.png'
 import searchIcon from '../assets/search_icon.png'
 import assets from '../assets/assets'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { AuthContext } from '../../Context/AuthContext'
 import { ChatContext } from '../../Context/ChatContext'
 
@@ -12,13 +12,28 @@ const SideBar = () => {
   const {selectedUser,setSelectedUser,getUsers,users,unseenMessages,setUnseenMessages}=useContext(ChatContext);
   const {logout, onlineUsers}= useContext(AuthContext);
   const [name,setName]=useState("");
+   const menuRef = useRef<HTMLDivElement>(null);
 
   const filteredUsers = name ? users.filter((user)=>user.fullName.toLowerCase().includes(name.toLocaleLowerCase())) : users;
+  const [open,setOpen]=useState(false);
 
   useEffect(()=>{
     getUsers();
   },[onlineUsers])
   const navigate = useNavigate();
+
+   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  
   return (
     <div className={`bg-[#8185b2]/10 h-full p-5 rounded-r-xl overflow-y-scroll text-white ${selectedUser ? "max-md:hidden" : ""}`}>
       <div className='pb-5'>
@@ -27,13 +42,13 @@ const SideBar = () => {
         <img src={logo} alt="" className="w-[min(30vw,25px)]" />
         <p className="text-sm text-white ">NEXTALK</p>
       </div>
-          <div className ="relative py-2 group">
-            <img src={menuIcon} alt="logo" className="max-w-5 cursor-pointer"/>
-            <div className="absolute top-full right-0 z-20 w-32 p-5 rounded-md bg-[#062B65] border border-gray-600 text-gray-100 hidden group-hover:block"><p className='cursor-pointer text-sm' onClick={()=>navigate('/profile')}>Edit Profile</p>
+          <div className ="relative py-2" ref={menuRef}>
+            <img src={menuIcon} alt="logo" className="max-w-5 cursor-pointer" onClick={()=>setOpen(prev=>!prev)}/>
+            {open && <div className="absolute top-full right-0 z-20 w-32 p-5 rounded-md bg-[#062B65] border border-gray-600 text-gray-100"><p className='cursor-pointer text-sm' onClick={()=>navigate('/profile')}>Edit Profile</p>
             <hr className="my-2 border-t border-gray-500"/>
             <p className = "cursor-pointer text-sm" onClick={()=>logout()}> Logout</p>
             </div>
-
+}
           </div>
         </div>
         <div className="bg-[#062B65] rounded-full flex items-center gap-2 py-3 px-4 mt-5">

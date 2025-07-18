@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post("/signup",signUp)
 router.post("/login",login)
-router.post("/changePassword",changePassword)
+router.put("/changePassword",protectRoute,changePassword)
 router.post("/forgotPassword",forgotPassword)
 router.put("/update-profile",protectRoute,updateProfile);
 router.get("/check",protectRoute,checkAuth);

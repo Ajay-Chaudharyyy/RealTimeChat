@@ -32,6 +32,10 @@ type AuthContextType = {
   logout: (showToast?: boolean) => Promise<void>;
   updateProfile: (body: any) => Promise<void>;
   handleOTP : (email:string,fullName:string)=>Promise<boolean|undefined>;
+  handlePasswordOTP : (email:string)=>Promise<boolean|undefined>;
+  resetPassword: (email:string,password:string,confirmPassword:string,otp:string)=>Promise<boolean|undefined>;
+  changePassword:(newpassword:string,oldPassword:string) =>Promise<boolean>
+
 };
 
 // ✅ Default context
@@ -44,7 +48,10 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
-  handleOTP : async () => false
+  handleOTP : async () => false,
+  handlePasswordOTP : async () => false,
+  resetPassword: async () => false,
+  changePassword: async () => false
 });
 
 interface AuthProviderProps {
@@ -91,6 +98,87 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(false);
     }
   };
+  const handlePasswordOTP = async (email:string) =>
+  {
+    try{
+      if(!email) return;
+      const response = await axios.post("api/v1/resetPasswordOtp",{email});
+      if(response?.data?.success)
+      {
+        toast.success("OTP sent to your email");
+        return true;
+      }
+      else{
+        toast.error(response?.data?.message)
+        return false;
+      }
+    }catch(err)
+    {
+      if(err instanceof Error)
+        toast.error(err.message)
+      return false;
+    }
+  }
+  
+  const changePassword = async (newPassword:string,oldPassword:string) => {
+    try{
+      if(!newPassword || !oldPassword)
+      {
+        toast.error("Password fields can not be empty")
+        return false;
+      }
+
+      const response = await axios.put("/api/v1/changePassword",{newPassword, oldPassword});
+
+      if(response?.data?.success)
+      {
+        return true
+      }
+      else{
+        toast.error(response?.data?.message)
+        return false
+      }
+    } catch(err:any)
+    {
+      if (err.response?.data?.message) {
+      // ✅ Custom backend message like "Old password is not correct"
+      toast.error(err.response.data.message);
+    } else if (err instanceof Error) {
+      toast.error(err.message);
+    } else {
+      toast.error("Something went wrong");
+    }
+    return false;
+  }
+  }
+
+  const resetPassword = async (email:string, password:string, confirmPassword:string,otp:string) => {
+
+    try{
+
+      if(!email || !password || !confirmPassword || !otp)
+      {
+        return;
+      }
+
+      const response = await axios.post("/api/v1/forgotPassword",{email,password,confirmPassword,otp});
+
+      if(response?.data?.success)
+      {
+        toast.success("Password Reset SuccessFully");
+        return true;
+      }
+      else{
+        toast.error(response?.data?.message);
+        return false;
+      }
+    }catch(err)
+    {
+      if(err instanceof Error)
+        toast.error(err.message)
+      return false;
+    }
+  }
 
     const handleOTP = async (email:string,fullName:string) => {
     try{
@@ -199,7 +287,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       login,
       logout,
       updateProfile,
-      handleOTP
+      handleOTP,
+      handlePasswordOTP,
+      resetPassword,
+      changePassword
     }),
     [authUser, onlineUsers, socket, loading]
   );

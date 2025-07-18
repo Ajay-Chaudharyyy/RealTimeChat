@@ -41,26 +41,46 @@ const getPasswordResetEmailHTML = (fullName, otp) => `
 
 exports.changePassword = async (req,res) => {
   try{
-    const {newPassword, confirmPassword} = req.body;
+    console.log("Entering in changePassword controller👏👏👏👏")
+    const {oldPassword, newPassword} = req.body;
 
-    if(!newPassword || !confirmPassword)
+    if(!newPassword || !oldPassword)
     {
       return res.status(400).json({
         success:false,
         message:"All fields are required"
       })
     };
-    if(newPassword != confirmPassword)
+    console.log("UserId : 😊😊😂", req?.user?._id);
+    const userId = req.user._id;
+    
+    const verify = await User.findById(userId);
+    if(!verify)
     {
       return res.status(400).json({
         success:false,
-        message:"Password do not match"
+        message:"User Not Found"
       })
     }
 
-    const id = req.user._id;
+    if(!await bcrypt.compare(oldPassword,verify.password))
+    {
+      return res.status(400).json({
+        success:false,
+        message:"Old password is not correct"
+      })
+    }
+    if(await bcrypt.compare(newPassword,verify.password))
+    {
+      return res.status(400).json({
+        success:false,
+        message:"Your password is Same as your old one, please provide new one"
+      })
+    }
+
+
     const password = await bcrypt.hash(newPassword,10);
-    const user = await User.findByIdAndUpdate(id,{password},{new:true});
+    const user = await User.findByIdAndUpdate(userId,{password},{new:true});
 
     res.status(200).json({
       success:true,
@@ -131,8 +151,8 @@ exports.sendPasswordResetEmail = async (req, res) => {
 exports.forgotPassword = async (req,res) => {
  
   try{
-    const {email,password,confirmPassword} = req.body;
-    if(!email || !password || !confirmPassword)
+    const {email,password,confirmPassword,otp} = req.body;
+    if(!email || !password || !confirmPassword || !otp)
     {
       return res.status(400).json({
         success:false,
@@ -145,6 +165,24 @@ exports.forgotPassword = async (req,res) => {
         success:false,
         message:"Passwords do not match"
       })
+    }
+
+    if(!otp)
+       {
+      return res.status(400).json({
+        success:false,
+        message:"OTP is Invalid"
+      })
+    }
+    const verifyOtp = await VerificationToken.findOne({otp});
+    if(!verifyOtp)
+    {
+       {
+      return res.status(400).json({
+        success:false,
+        message:"OTP is incorrect"
+      })
+    }
     }
     const user = await User.findOne({email});
 
